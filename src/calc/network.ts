@@ -43,6 +43,12 @@ export interface Network {
 function internalLinks(component: Component, ports: PortDef[]): [string, string][] {
   const links: [string, string][] = [];
   if (component.type === 'battery-switch' && component.params.closed === false) return links;
+  if (component.type === 'battery-selector') {
+    const pos = component.params.position ?? 'both';
+    if (pos === '1' || pos === 'both') links.push(['in1', 'out']);
+    if (pos === '2' || pos === 'both') links.push(['in2', 'out']);
+    return links;
+  }
   const groups = new Map<string, string[]>();
   for (const p of ports) {
     if (!p.group) continue;

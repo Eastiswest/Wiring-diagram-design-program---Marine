@@ -51,6 +51,7 @@ export type ComponentType =
   | 'inverter'
   | 'inverter-charger'
   | 'battery-switch'
+  | 'battery-selector'
   | 'fuse'
   | 'breaker'
   | 'busbar'
@@ -144,6 +145,8 @@ export interface ComponentParams {
   powerFactor?: number;
   /** Switch state, used when tracing circuits */
   closed?: boolean;
+  /** Selector switch position: off, 1, 2 or both */
+  position?: 'off' | '1' | '2' | 'both';
   /** Neutral-earth link present (inverters, generators, isolation transformers) */
   neutralEarthLink?: boolean;
   /** Free text */

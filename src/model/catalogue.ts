@@ -188,6 +188,21 @@ export const CATALOGUE: Record<ComponentType, ComponentDef> = {
     ],
     description: 'Main battery isolator. Modelled closed for circuit calculations.',
   },
+  'battery-selector': {
+    type: 'battery-selector',
+    label: 'Battery selector (1-2-BOTH-OFF)',
+    category: 'dc-distribution',
+    refPrefix: 'S',
+    width: 100,
+    height: 80,
+    defaults: { name: 'Battery selector', ratedA: 300, position: 'both' },
+    ports: () => [
+      { id: 'in1', label: '1', kind: 'dc+', side: 'left' },
+      { id: 'in2', label: '2', kind: 'dc+', side: 'left' },
+      { id: 'out', label: 'COM', kind: 'dc+', side: 'right' },
+    ],
+    description: 'Four-position selector joining bank 1, bank 2 or both to the common output. The position set here is used for the calculations; BOTH parallels the banks.',
+  },
   fuse: {
     type: 'fuse',
     label: 'Fuse',

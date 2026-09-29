@@ -840,6 +840,50 @@ export function analyse(project: Project): Analysis {
     }
   }
 
+  // ---- Battery selector switches ---------------------------------------------
+  for (const sw of comps.filter((c) => c.type === 'battery-selector')) {
+    const pos = sw.params.position ?? 'both';
+    const bat = (port: string) => {
+      const t = trace(net, portKey(sw.id, port), (_k, comp, p) => comp.type === 'battery' && p.id === 'pos', { avoidComponents: new Set([sw.id]) });
+      return t ? byId.get(splitKey(t.target).component) : undefined;
+    };
+    const b1 = bat('in1');
+    const b2 = bat('in2');
+    if (pos === 'both' && b1 && b2) {
+      const v1 = b1.params.voltage ?? 12;
+      const v2 = b2.params.voltage ?? 12;
+      if (Math.abs(v1 - v2) > 0.5) {
+        checks.push({
+          id: `selector-voltage-${sw.id}`,
+          severity: 'error',
+          message: `${sw.ref} ${sw.params.name} in BOTH parallels ${b1.ref} (${v1} V) with ${b2.ref} (${v2} V).`,
+          componentIds: [sw.id, b1.id, b2.id],
+          cableIds: [],
+          standard: 'general',
+        });
+      } else if (b1.params.chemistry !== b2.params.chemistry) {
+        checks.push({
+          id: `selector-chemistry-${sw.id}`,
+          severity: 'warning',
+          message: `${sw.ref} ${sw.params.name} in BOTH parallels a ${b1.params.chemistry} bank with a ${b2.params.chemistry} bank. Mixed chemistries should not be left paralleled.`,
+          componentIds: [sw.id, b1.id, b2.id],
+          cableIds: [],
+          standard: 'BMEA',
+        });
+      }
+    }
+    if (pos === 'off') {
+      checks.push({
+        id: `selector-off-${sw.id}`,
+        severity: 'info',
+        message: `${sw.ref} ${sw.params.name} is set to OFF, so nothing downstream of it is supplied in this analysis.`,
+        componentIds: [sw.id],
+        cableIds: [],
+        standard: 'general',
+      });
+    }
+  }
+
   // ---- Bank analysis ------------------------------------------------------
   const bankMap = new Map<string, BankAnalysis>();
   for (const bat of batteries) {

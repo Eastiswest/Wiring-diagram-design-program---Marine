@@ -115,6 +115,27 @@ export function Symbol({ component, width, height }: Props): ReactElement {
           <Text x={width - 4} y={12} size={9} anchor="end">{`${p.ratedA ?? ''} A`}</Text>
         </g>
       );
+    case 'battery-selector': {
+      const pos = p.position ?? 'both';
+      const angle = { off: 180, '1': 225, '2': 315, both: 270 }[pos];
+      const rad = (angle * Math.PI) / 180;
+      const kx = cx + 14 * Math.cos(rad);
+      const ky = cy - 4 + 14 * Math.sin(rad);
+      return (
+        <g>
+          <Box width={width} height={height} />
+          {ref}
+          <circle cx={cx} cy={cy - 4} r={17} fill="none" stroke={stroke} strokeWidth={1.5} />
+          <line x1={cx} y1={cy - 4} x2={kx} y2={ky} stroke={stroke} strokeWidth={3} strokeLinecap="round" />
+          <Text x={cx - 20} y={cy - 22} size={7}>1</Text>
+          <Text x={cx + 20} y={cy - 22} size={7}>2</Text>
+          <Text x={cx} y={cy - 24} size={7}>BOTH</Text>
+          <Text x={cx} y={cy + 18} size={7}>OFF</Text>
+          <Text x={width - 4} y={12} size={9} anchor="end">{`${p.ratedA ?? ''} A`}</Text>
+          <Text x={cx} y={height - 4} size={9} weight={600}>{pos.toUpperCase()}</Text>
+        </g>
+      );
+    }
     case 'fuse':
       return (
         <g>

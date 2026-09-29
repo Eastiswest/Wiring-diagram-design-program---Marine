@@ -70,6 +70,21 @@ export const FIELDS: Record<ComponentType, FieldSpec[]> = {
   inverter: [voltage, { ...ratedW, label: 'Continuous output' }, neLink],
   'inverter-charger': [voltage, { ...ratedW, label: 'Continuous inverter output' }, { key: 'chargerA', label: 'Charger current', type: 'number', unit: 'A' }, neLink],
   'battery-switch': [ratedA, { key: 'closed', label: 'Closed (on) for calculations', type: 'checkbox' }],
+  'battery-selector': [
+    ratedA,
+    {
+      key: 'position',
+      label: 'Position used for calculations',
+      type: 'select',
+      options: [
+        { value: 'off', label: 'OFF' },
+        { value: '1', label: '1' },
+        { value: '2', label: '2' },
+        { value: 'both', label: 'BOTH (banks paralleled)' },
+      ],
+      hint: 'Check the design in each position you expect to use. BOTH joins the two banks.',
+    },
+  ],
   fuse: protection,
   breaker: protection,
   busbar: [{ key: 'netKind', label: 'Network', type: 'select', options: netKindOptions }, { key: 'portCount', label: 'Studs', type: 'number' }, ratedA],

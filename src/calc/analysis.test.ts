@@ -210,3 +210,46 @@ describe('parallel batteries', () => {
     expect(a.checks.filter((c) => c.severity === 'error')).toHaveLength(0);
   });
 });
+
+describe('battery selector switch', () => {
+  function rig(position: 'off' | '1' | '2' | 'both') {
+    const p = newProject('t', {}, 'leisure');
+    const b1 = makeComponent(p, 'battery', 0, 0, { voltage: 12, capacityAh: 100, chemistry: 'agm', bankId: 'one' });
+    const b2 = makeComponent(p, 'battery', 0, 0, { voltage: 12, capacityAh: 100, chemistry: 'agm', bankId: 'two' });
+    const f1 = makeComponent(p, 'fuse', 0, 0, { rating: 100 });
+    const f2 = makeComponent(p, 'fuse', 0, 0, { rating: 100 });
+    const sw = makeComponent(p, 'battery-selector', 0, 0, { position });
+    const load = makeComponent(p, 'dc-load', 0, 0, { amps: 10, voltage: 12, hoursPerDay: 1 });
+    p.components.push(b1, b2, f1, f2, sw, load);
+    const w = (a: typeof b1, ap: string, b: typeof b1, bp: string, len = 1) => p.cables.push(makeCable(p, { component: a.id, port: ap }, { component: b.id, port: bp }, { lengthM: len }));
+    w(b1, 'pos', f1, 'in', 0.1);
+    w(f1, 'out', sw, 'in1');
+    w(b2, 'pos', f2, 'in', 0.1);
+    w(f2, 'out', sw, 'in2');
+    w(sw, 'out', load, 'pos', 2);
+    w(load, 'neg', b1, 'neg', 2);
+    w(load, 'neg', b2, 'neg', 2);
+    return { p, load, b2 };
+  }
+  it('supplies from bank 1 in position 1', () => {
+    const { p, load } = rig('1');
+    const l = analyse(p).loads.find((x) => x.loadId === load.id)!;
+    expect(l.bankId).toBe('one');
+  });
+  it('supplies from bank 2 in position 2', () => {
+    const { p, load } = rig('2');
+    const l = analyse(p).loads.find((x) => x.loadId === load.id)!;
+    expect(l.bankId).toBe('two');
+  });
+  it('isolates the load when OFF', () => {
+    const { p, load } = rig('off');
+    const l = analyse(p).loads.find((x) => x.loadId === load.id)!;
+    expect(l.bankId).toBeUndefined();
+  });
+  it('warns when BOTH parallels different voltages', () => {
+    const { p, b2 } = rig('both');
+    b2.params.voltage = 24;
+    const a = analyse(p);
+    expect(a.checks.some((c) => c.id.startsWith('selector-voltage'))).toBe(true);
+  });
+});
