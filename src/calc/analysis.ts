@@ -88,6 +88,8 @@ export interface CableResult {
   expectedColour: string;
   colourOk: boolean;
   insulationTemp: InsulationTemp;
+  /** Direct stud connection (e.g. battery terminal to MRBF), no cable to size */
+  stud?: boolean;
   issues: string[];
 }
 
@@ -600,7 +602,8 @@ export function analyse(project: Project): Analysis {
     const expected = CONDUCTOR_COLOURS[kind] ?? CONDUCTOR_COLOURS.any;
     const colour = (cable.params.colour ?? '').trim().toLowerCase();
     const colourOk = !colour || expected.accepted.length === 0 || expected.accepted.includes(colour);
-    const isPower = !['n2k', 'any'].includes(kind);
+    const onStud = [cable.from, cable.to].some((end) => byId.get(end.component)?.type === 'terminal-fuse' && end.port === 'in') && cable.params.lengthM <= 0;
+    const isPower = !['n2k', 'any'].includes(kind) && !onStud;
     const r: CableResult = {
       cableId: cable.id,
       tag: cable.params.tag,
@@ -623,6 +626,7 @@ export function analyse(project: Project): Analysis {
       expectedColour: expected.name,
       colourOk,
       insulationTemp: cable.params.insulationTemp,
+      stud: onStud,
       issues: [],
     };
     if (isPower) {
@@ -731,7 +735,7 @@ export function analyse(project: Project): Analysis {
           standard: 'ISO10133',
         });
       }
-    } else if (!['n2k', 'any'].includes(r.kind)) {
+    } else if (!['n2k', 'any'].includes(r.kind) && !r.stud) {
       r.issues.push('No size assigned.');
     }
     if (r.kind === 'any') {
@@ -754,8 +758,7 @@ export function analyse(project: Project): Analysis {
         standard: r.kind.startsWith('ac') ? 'ISO13297' : 'ISO10133',
       });
     }
-    const onStud = [cable.from, cable.to].some((end) => byId.get(end.component)?.type === 'terminal-fuse' && end.port === 'in');
-    if (r.lengthM <= 0 && !onStud) {
+    if (r.lengthM <= 0 && !r.stud) {
       checks.push({
         id: `cable-length-${r.cableId}`,
         severity: 'warning',

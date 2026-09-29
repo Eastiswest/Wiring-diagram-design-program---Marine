@@ -59,7 +59,7 @@ export function schematicSvg(project: Project, analysis: Analysis): string {
       borderRadius: 6,
     });
     parts.push(`<path d="${d}" fill="none" stroke="${colour}" stroke-width="${strokeForCsa(r?.csa)}"/>`);
-    const label = [w.params.tag, r?.csa ? `${r.csa} mm²` : '', w.params.lengthM ? `${w.params.lengthM} m` : ''].filter(Boolean).join(' · ');
+    const label = [w.params.tag, r?.stud ? 'stud' : '', r?.csa ? `${r.csa} mm²` : '', w.params.lengthM ? `${w.params.lengthM} m` : ''].filter(Boolean).join(' · ');
     const lw = label.length * 5.2 + 8;
     parts.push(`<rect x="${lx - lw / 2}" y="${ly - 8}" width="${lw}" height="14" rx="3" fill="#ffffff" stroke="#d1d5db" stroke-width="0.5"/>`);
     parts.push(`<text x="${lx}" y="${ly + 3}" font-size="9" text-anchor="middle" fill="#374151">${esc(label)}</text>`);

@@ -10,6 +10,7 @@ export type CableEdgeType = Edge<CableEdgeData, 'cable'>;
 
 export function cableLabel(cable: Cable, result?: CableResult): string {
   const parts = [cable.params.tag];
+  if (result?.stud) parts.push('stud');
   if (result?.csa) parts.push(`${result.csa} mm²${result.manual ? '' : '*'}`);
   if (cable.params.lengthM) parts.push(`${cable.params.lengthM} m`);
   return parts.join(' · ');
