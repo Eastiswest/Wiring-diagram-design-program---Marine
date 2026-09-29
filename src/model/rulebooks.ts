@@ -59,6 +59,7 @@ export function defaultRulebook(vesselUse: VesselUse = 'leisure'): RulebookSetti
     copperResistivity: 0.0175,
     requireGalvanicIsolation: true,
     autonomyDays: vesselUse === 'commercial' ? 1 : 2,
+    starterVdPct: 5,
   };
 }
 

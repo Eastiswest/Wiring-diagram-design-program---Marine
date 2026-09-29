@@ -44,7 +44,7 @@ export function CablesView({ analysis }: { analysis: Analysis }) {
                 <td>{r.kind}</td>
                 <td className="num"><input type="number" className="cell" step={0.1} min={0} value={cable.params.lengthM} onChange={(e) => updateCable(r.cableId, { lengthM: Number(e.target.value) })} /></td>
                 <td className="num">{fmt(r.loadCurrentA)}</td>
-                <td className="num">{r.chargeCurrentA ? fmt(r.chargeCurrentA) : '-'}</td>
+                <td className="num">{r.chargeCurrentA ? fmt(r.chargeCurrentA) : r.crankCurrentA ? `${fmt(r.crankCurrentA, 0)} crank` : '-'}</td>
                 <td>{r.protectedBy ? `${r.protectedBy.ref} ${r.protectedBy.rating} A` : <span className="muted">none</span>}</td>
                 <td className="num">{fmt(r.requiredA)}</td>
                 <td>

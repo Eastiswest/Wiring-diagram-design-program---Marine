@@ -251,6 +251,7 @@ function CableInspector({ cable, result, analysis }: { cable: Cable; result?: Ca
             <dt>Network</dt><dd>{result.kind} ({result.expectedColour})</dd>
             <dt>Load current</dt><dd>{fmt(result.loadCurrentA)} A</dd>
             {result.chargeCurrentA ? <><dt>Charge current</dt><dd>{fmt(result.chargeCurrentA)} A</dd></> : null}
+            {result.crankCurrentA ? <><dt>Cranking current</dt><dd>{fmt(result.crankCurrentA, 0)} A (momentary, sized on drop)</dd></> : null}
             <dt>Protected by</dt><dd>{result.protectedBy ? `${result.protectedBy.ref} ${result.protectedBy.rating} A` : 'none'}</dd>
             <dt>Must carry</dt><dd>{fmt(result.requiredA)} A</dd>
             <dt>Size</dt><dd>{result.csa ? `${result.csa} mm² ${result.manual ? '(fixed)' : '(auto)'}` : '-'}</dd>

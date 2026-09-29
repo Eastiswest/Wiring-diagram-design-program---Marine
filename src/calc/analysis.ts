@@ -9,6 +9,7 @@ import {
   buildNetwork,
   portKey,
   protectionOnPath,
+  reachable,
   splitKey,
   trace,
   type Hop,
@@ -52,6 +53,8 @@ export interface LoadCircuit {
   viaInverter?: string;
   /** For DC loads supplied through a DC-DC converter output */
   viaConverter?: string;
+  /** Momentary load (engine cranking): sized on voltage drop, exempt from protection */
+  intermittent?: boolean;
   issues: string[];
 }
 
@@ -68,6 +71,8 @@ export interface CableResult {
   lengthM: number;
   loadCurrentA: number;
   chargeCurrentA: number;
+  /** Momentary cranking current through this cable, amps */
+  crankCurrentA: number;
   designCurrentA: number;
   /** Rating of the device protecting this cable, if any */
   protectedBy?: ProtectionOnPath;
@@ -223,6 +228,7 @@ export function analyse(project: Project): Analysis {
   const checks: CheckResult[] = [];
   const loadCurrentOnCable = new Map<string, number>();
   const chargeCurrentOnCable = new Map<string, number>();
+  const crankCurrentOnCable = new Map<string, number>();
   const protectionOnCable = new Map<string, ProtectionOnPath[]>();
   const addCurrent = (map: Map<string, number>, hops: Hop[] | undefined, amps: number) => {
     for (const id of cablesOn(hops)) map.set(id, (map.get(id) ?? 0) + amps);
@@ -294,11 +300,13 @@ export function analyse(project: Project): Analysis {
     const negPort = c.type === 'dcdc' ? 'inneg' : 'neg';
     const { supply, ret } = traceDc(c, posPort, negPort);
     const supplyVoltage = c.type === 'dcdc' ? (p.inputVoltage ?? voltage) : voltage;
+    const intermittent = c.type === 'starter';
     const load: LoadCircuit = {
       loadId: c.id,
       ref: c.ref,
       name,
       kind: 'dc',
+      intermittent,
       voltage: supplyVoltage,
       currentA,
       watts,
@@ -310,7 +318,7 @@ export function analyse(project: Project): Analysis {
       supplyPath: supply?.hops,
       returnPath: ret?.hops,
       protection: supply ? protectionOnPath(net, supply.hops) : [],
-      vdLimitPct: p.critical ? rb.dcCriticalVdPct : rb.dcGeneralVdPct,
+      vdLimitPct: intermittent ? (rb.starterVdPct ?? 5) : p.critical ? rb.dcCriticalVdPct : rb.dcGeneralVdPct,
       issues: [],
     };
     if (supply) {
@@ -353,7 +361,16 @@ export function analyse(project: Project): Analysis {
         standard: 'general',
       });
     }
-    if (supply && load.protection.length === 0) {
+    if (supply && load.protection.length === 0 && intermittent) {
+      checks.push({
+        id: `starter-unprotected-${c.id}`,
+        severity: 'info',
+        message: `${c.ref} ${p.name}: cranking circuit has no overcurrent protection. This is permitted for engine cranking conductors; keep the run short and well supported.`,
+        componentIds: [c.id],
+        cableIds: cablesOn(supply.hops),
+        standard: 'ISO10133',
+      });
+    } else if (supply && load.protection.length === 0) {
       load.issues.push('No overcurrent protection on the positive supply.');
       checks.push({
         id: `unprotected-${c.id}`,
@@ -365,8 +382,13 @@ export function analyse(project: Project): Analysis {
       });
     }
     if (supply) assignProtection(net, supply.hops, protectionOnCable);
-    addCurrent(loadCurrentOnCable, supply?.hops, currentA);
-    addCurrent(loadCurrentOnCable, ret?.hops, currentA);
+    if (intermittent) {
+      addCurrent(crankCurrentOnCable, supply?.hops, currentA);
+      addCurrent(crankCurrentOnCable, ret?.hops, currentA);
+    } else {
+      addCurrent(loadCurrentOnCable, supply?.hops, currentA);
+      addCurrent(loadCurrentOnCable, ret?.hops, currentA);
+    }
     loads.push(load);
   }
 
@@ -592,6 +614,7 @@ export function analyse(project: Project): Analysis {
       lengthM: cable.params.lengthM,
       loadCurrentA: loadA,
       chargeCurrentA: chargeA,
+      crankCurrentA: crankCurrentOnCable.get(cable.id) ?? 0,
       designCurrentA: designA,
       protectedBy,
       requiredA,
@@ -612,13 +635,14 @@ export function analyse(project: Project): Analysis {
   }
 
   // Voltage drop: iterate, upsizing automatic cables on the worst path.
+  const pathCurrent = (load: LoadCircuit, r: CableResult) => (load.intermittent ? r.crankCurrentA : r.loadCurrentA);
   const computeVd = (load: LoadCircuit): number => {
     let vd = 0;
     for (const id of [...cablesOn(load.supplyPath), ...cablesOn(load.returnPath)]) {
       const r = cableResults.get(id);
       const cable = net.cables.get(id);
       if (!r || !cable || !r.csa) continue;
-      vd += r.loadCurrentA * cableResistance(cable.params.lengthM, r.csa, rb);
+      vd += pathCurrent(load, r) * cableResistance(cable.params.lengthM, r.csa, rb);
     }
     return vd;
   };
@@ -636,7 +660,7 @@ export function analyse(project: Project): Analysis {
         const r = cableResults.get(id);
         const cable = net.cables.get(id);
         if (!r || !cable || r.manual || !r.csa || !nextSize(r.csa)) continue;
-        const score = r.loadCurrentA * cableResistance(cable.params.lengthM, r.csa, rb);
+        const score = pathCurrent(load, r) * cableResistance(cable.params.lengthM, r.csa, rb);
         if (score > bestScore) {
           bestScore = score;
           best = r;
@@ -744,7 +768,7 @@ export function analyse(project: Project): Analysis {
 
   // ---- Protection vs load current ----------------------------------------
   for (const load of loads) {
-    if (!load.protection.length || load.currentA <= 0) continue;
+    if (!load.protection.length || load.currentA <= 0 || load.intermittent) continue;
     const nearest = load.protection[0];
     if (nearest.rating < load.currentA) {
       checks.push({
@@ -825,7 +849,14 @@ export function analyse(project: Project): Analysis {
       const feeder = terminalCables.some((w) => {
         const farId = w.from.component === bat.id && w.from.port === 'pos' ? w.to.component : w.from.component;
         const far = byId.get(farId);
-        return !(far && far.type === 'battery' && bankOf(far) === bankOf(bat));
+        if (far && far.type === 'battery' && bankOf(far) === bankOf(bat)) return false;
+        // A conductor that only reaches a starter motor is a cranking conductor and is exempt.
+        const reach = reachable(net, portKey(farId, w.from.component === bat.id ? w.to.port : w.from.port));
+        const others = [...reach].some((k) => {
+          const comp = byId.get(splitKey(k).component);
+          return comp && comp.id !== bat.id && comp.type !== 'starter' && comp.type !== 'battery-switch' && comp.type !== 'battery-selector' && comp.type !== 'junction' && comp.type !== 'terminal-block';
+        });
+        return others;
       });
       if (feeder) {
         checks.push({
@@ -925,7 +956,7 @@ export function analyse(project: Project): Analysis {
     if (extraWh) l.dailyWh += extraWh;
     bank.loads.push(l);
     bank.dailyAh += l.dailyWh / bank.voltage;
-    bank.peakLoadA += l.currentA;
+    if (!l.intermittent) bank.peakLoadA += l.currentA;
   }
   for (const bank of bankMap.values()) {
     const dod = rb.dodByChemistry[bank.chemistry as keyof typeof rb.dodByChemistry] ?? 0.5;

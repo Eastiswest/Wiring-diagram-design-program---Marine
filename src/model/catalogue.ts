@@ -298,6 +298,17 @@ export const CATALOGUE: Record<ComponentType, ComponentDef> = {
     ports: () => dcPair('ll'),
     description: 'Any DC consumer. Enter watts or amps, hours per day and whether it is a critical circuit.',
   },
+  starter: {
+    type: 'starter',
+    label: 'Engine starter motor',
+    category: 'dc-load',
+    refPrefix: 'M',
+    width: 110,
+    height: 70,
+    defaults: { name: 'Engine starter', voltage: 12, amps: 600, hoursPerDay: 0, dutyCycle: 1, category: 'engine' },
+    ports: () => dcPair('ll'),
+    description: 'Cranking motor. Enter the cranking current from the engine data. The cranking circuit is sized on voltage drop and is exempt from overcurrent protection.',
+  },
   'shore-inlet': {
     type: 'shore-inlet',
     label: 'Shore power inlet',
@@ -595,7 +606,7 @@ export function portDef(component: Component, portId: string): PortDef | undefin
 
 /** Categories that count as a DC "consumer" for load analysis. */
 export function isDcLoad(type: ComponentType): boolean {
-  return type === 'dc-load' || type === 'n2k-power';
+  return type === 'dc-load' || type === 'n2k-power' || type === 'starter';
 }
 
 export function isAcLoad(type: ComponentType): boolean {

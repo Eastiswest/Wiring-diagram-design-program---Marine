@@ -58,6 +58,7 @@ export type ComponentType =
   | 'dc-panel'
   | 'shunt'
   | 'dc-load'
+  | 'starter'
   | 'shore-inlet'
   | 'galvanic-isolator'
   | 'isolation-transformer'
@@ -217,6 +218,8 @@ export interface RulebookSettings {
   requireGalvanicIsolation: boolean;
   /** Days of autonomy the house bank should provide */
   autonomyDays: number;
+  /** Maximum voltage drop for engine cranking circuits, percent (sized on drop, not continuous rating) */
+  starterVdPct?: number;
 }
 
 export interface VesselInfo {

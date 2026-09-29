@@ -212,6 +212,17 @@ export function Symbol({ component, width, height }: Props): ReactElement {
         </g>
       );
     }
+    case 'starter':
+      return (
+        <g>
+          <Box width={width} height={height} />
+          {ref}
+          <circle cx={cx} cy={cy - 2} r={13} fill="none" stroke={stroke} strokeWidth={1.5} />
+          <Text x={cx} y={cy + 3} size={12} weight={700}>M</Text>
+          <Text x={width - 6} y={12} size={10} anchor="end">{`${p.amps ?? ''} A crank`}</Text>
+          {title}
+        </g>
+      );
     case 'ac-socket':
       return (
         <g>

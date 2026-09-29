@@ -253,3 +253,31 @@ describe('battery selector switch', () => {
     expect(a.checks.some((c) => c.id.startsWith('selector-voltage'))).toBe(true);
   });
 });
+
+describe('engine starter', () => {
+  it('sizes the cranking circuit on voltage drop without demanding a fuse', () => {
+    const p = newProject('t', {}, 'leisure');
+    const bat = makeComponent(p, 'battery', 0, 0, { voltage: 12, capacityAh: 90, chemistry: 'agm', bankId: 'start' });
+    const sw = makeComponent(p, 'battery-switch', 0, 0, {});
+    const starter = makeComponent(p, 'starter', 0, 0, { amps: 600, voltage: 12 });
+    p.components.push(bat, sw, starter);
+    const w = (a: typeof bat, ap: string, b: typeof bat, bp: string, len: number) => {
+      const c = makeCable(p, { component: a.id, port: ap }, { component: b.id, port: bp }, { lengthM: len });
+      p.cables.push(c);
+      return c;
+    };
+    w(bat, 'pos', sw, 'in', 0.5);
+    const feed = w(sw, 'out', starter, 'pos', 1.5);
+    w(starter, 'neg', bat, 'neg', 2);
+    const a = analyse(p);
+    const l = a.loads.find((x) => x.loadId === starter.id)!;
+    expect(l.intermittent).toBe(true);
+    expect(l.vdPct).toBeLessThanOrEqual(5);
+    const f = a.cables.find((c) => c.cableId === feed.id)!;
+    expect(f.crankCurrentA).toBe(600);
+    expect(f.csa).toBeGreaterThanOrEqual(25);
+    expect(a.checks.filter((c) => c.severity === 'error')).toHaveLength(0);
+    expect(a.checks.some((c) => c.id.startsWith('starter-unprotected'))).toBe(true);
+    expect(a.banks[0].peakLoadA).toBe(0);
+  });
+});

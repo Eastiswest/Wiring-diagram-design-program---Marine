@@ -91,6 +91,10 @@ export const FIELDS: Record<ComponentType, FieldSpec[]> = {
   'dc-panel': [voltage],
   shunt: [ratedA],
   'dc-load': [voltage, ...loadCommon],
+  starter: [
+    voltage,
+    { key: 'amps', label: 'Cranking current', type: 'number', unit: 'A', hint: 'From the engine manual; typically 400 to 800 A for small diesels at 12 V.' },
+  ],
   'shore-inlet': [{ ...ratedA, label: 'Inlet rating', type: 'select', options: [16, 32, 63].map((v) => ({ value: v, label: `${v} A` })) }],
   'galvanic-isolator': [ratedA],
   'isolation-transformer': [{ ...ratedW, label: 'Rating', unit: 'VA' }, neLink],
