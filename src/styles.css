@@ -179,3 +179,5 @@ ul.plain { padding-left: 18px; }
   .react-flow__controls button svg { fill: var(--text); }
   .react-flow__minimap { background: var(--panel); }
 }
+
+.row-inline { display: flex; gap: 10px; align-items: center; }

@@ -547,6 +547,21 @@ export function analyse(project: Project): Analysis {
     addCurrent(chargeCurrentOnCable, ret?.hops, amps);
   }
 
+  // ---- Battery interconnects --------------------------------------------------
+  // Cables joining batteries of the same bank share the bank's current in a way the
+  // path trace cannot see, so they are sized for the whole bank's load or charge current.
+  const bankOf = (c: Component) => c.params.bankId ?? c.id;
+  const bankLoadA = new Map<string, number>();
+  for (const l of loads) if (l.kind === 'dc' && l.bankId) bankLoadA.set(l.bankId, (bankLoadA.get(l.bankId) ?? 0) + l.currentA);
+  for (const cable of project.cables) {
+    const a = byId.get(cable.from.component);
+    const b = byId.get(cable.to.component);
+    if (!a || !b || a.type !== 'battery' || b.type !== 'battery' || bankOf(a) !== bankOf(b)) continue;
+    const bankId = bankOf(a);
+    loadCurrentOnCable.set(cable.id, Math.max(loadCurrentOnCable.get(cable.id) ?? 0, bankLoadA.get(bankId) ?? 0));
+    chargeCurrentOnCable.set(cable.id, Math.max(chargeCurrentOnCable.get(cable.id) ?? 0, chargeIntoBank.get(bankId) ?? 0));
+  }
+
   // ---- Cable results and automatic sizing ---------------------------------
   const cableResults = new Map<string, CableResult>();
   for (const cable of project.cables) {

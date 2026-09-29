@@ -184,3 +184,29 @@ describe('common negative bus', () => {
     expect(a.loads[0].bankId).toBe('house');
   });
 });
+
+describe('parallel batteries', () => {
+  it('sizes interconnects for the bank current and sums the bank capacity', () => {
+    const p = newProject('t', {}, 'leisure');
+    const b1 = makeComponent(p, 'battery', 0, 0, { voltage: 12, capacityAh: 100, chemistry: 'agm', bankId: 'house' });
+    const b2 = makeComponent(p, 'battery', 0, 0, { voltage: 12, capacityAh: 100, chemistry: 'agm', bankId: 'house' });
+    const fuse = makeComponent(p, 'fuse', 0, 0, { rating: 100 });
+    const load = makeComponent(p, 'dc-load', 0, 0, { amps: 80, voltage: 12, hoursPerDay: 1 });
+    p.components.push(b1, b2, fuse, load);
+    const w = (a: typeof b1, ap: string, b: typeof b1, bp: string, len = 1) => {
+      const c = makeCable(p, { component: a.id, port: ap }, { component: b.id, port: bp }, { lengthM: len });
+      p.cables.push(c);
+      return c;
+    };
+    const posLink = w(b1, 'pos', b2, 'pos', 0.3);
+    const negLink = w(b1, 'neg', b2, 'neg', 0.3);
+    w(b1, 'pos', fuse, 'in', 0.1);
+    w(fuse, 'out', load, 'pos', 2);
+    w(load, 'neg', b1, 'neg', 2);
+    const a = analyse(p);
+    expect(a.banks[0].capacityAh).toBe(200);
+    expect(a.cables.find((c) => c.cableId === posLink.id)!.loadCurrentA).toBeCloseTo(80);
+    expect(a.cables.find((c) => c.cableId === negLink.id)!.loadCurrentA).toBeCloseTo(80);
+    expect(a.checks.filter((c) => c.severity === 'error')).toHaveLength(0);
+  });
+});

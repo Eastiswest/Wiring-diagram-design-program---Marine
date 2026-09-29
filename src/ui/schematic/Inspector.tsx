@@ -89,6 +89,7 @@ function ComponentInspector({ component, analysis }: { component: Component; ana
   const updateComponent = useProject((s) => s.updateComponent);
   const updateRef = useProject((s) => s.updateComponentRef);
   const removeComponents = useProject((s) => s.removeComponents);
+  const addParallelBattery = useProject((s) => s.addParallelBattery);
   const commit = useProject((s) => s.commit);
   const def = CATALOGUE[component.type];
   const p = component.params;
@@ -129,6 +130,17 @@ function ComponentInspector({ component, analysis }: { component: Component; ana
         ),
       )}
       {(component.type === 'dc-panel' || component.type === 'ac-panel') && <CircuitsEditor circuits={p.circuits ?? []} onChange={setCircuits} />}
+      {component.type === 'battery' ? (
+        <div className="field">
+          <span className="field-label">Parallel batteries</span>
+          <div className="row-inline">
+            <span>{bank ? `${bank.batteryIds.length} in bank ${bank.bankId}` : '1'}</span>
+            <button className="small" onClick={() => addParallelBattery(component.id)}>Add battery in parallel</button>
+          </div>
+          <small>Adds another battery of this spec beside the bank and wires + to + and - to -. Each battery is its own component and can be moved.</small>
+          {(p.parallelCount ?? 1) > 1 ? <small>This battery also carries a legacy multiplier of {p.parallelCount}; its capacity is counted {p.parallelCount} times. Set it to 1 after adding real batteries.</small> : null}
+        </div>
+      ) : null}
       <label className="field"><span className="field-label">Location on vessel</span><input value={p.location ?? ''} onChange={(e) => set({ location: e.target.value })} /></label>
       <label className="field"><span className="field-label">Notes</span><textarea rows={2} value={p.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} /></label>
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { demoProject } from '../model/demo';
 import { portDef } from '../model/catalogue';
+import { nodeSize } from '../ui/schematic/layout';
 import { makeCable, makeComponent, validateProject } from '../model/project';
 import type { Cable, CableParams, Component, ComponentParams, ComponentType, Project, RulebookSettings, VesselInfo } from '../model/types';
 
@@ -30,6 +31,8 @@ interface State {
   /** Paste the clipboard, offset from the originals; returns the number of components pasted */
   paste: () => number;
   duplicateSelection: () => number;
+  /** Add another battery of the same spec and bank, wired in parallel with the given one */
+  addParallelBattery: (id: string) => Component | undefined;
   setView: (view: ViewId) => void;
   select: (sel: Selection) => void;
   /** Replace the project with history recorded. */
@@ -119,6 +122,30 @@ export const useProject = create<State>((set, get) => ({
   duplicateSelection: () => {
     if (!get().copySelection()) return 0;
     return get().paste();
+  },
+  addParallelBattery: (id) => {
+    const { project } = get();
+    const src = project.components.find((c) => c.id === id);
+    if (!src || src.type !== 'battery') return undefined;
+    const bankId = src.params.bankId ?? src.id;
+    const siblings = project.components.filter((c) => c.type === 'battery' && (c.params.bankId ?? c.id) === bankId);
+    // Place the new battery to the right of the right-most battery of the bank.
+    const rightMost = siblings.reduce((a, b) => (b.x > a.x ? b : a), src);
+    const { width } = nodeSize(rightMost);
+    const copy = makeComponent(project, 'battery', rightMost.x + width + 60, rightMost.y, { ...clone(src.params), bankId, parallelCount: 1 });
+    const cables: Cable[] = [];
+    const after = { ...project, components: [...project.components, copy] };
+    const posCable = makeCable(after, { component: rightMost.id, port: 'pos' }, { component: copy.id, port: 'pos' }, { lengthM: 0.3, colour: 'red' });
+    const negCable = makeCable({ ...after, cables: [...after.cables, posCable] }, { component: rightMost.id, port: 'neg' }, { component: copy.id, port: 'neg' }, { lengthM: 0.3, colour: 'black' });
+    cables.push(posCable, negCable);
+    get().commit((d) => {
+      const original = d.components.find((c) => c.id === id);
+      if (original && !original.params.bankId) original.params.bankId = bankId;
+      d.components.push(copy);
+      d.cables.push(...cables);
+    });
+    set({ selection: { componentIds: [copy.id], cableIds: [] } });
+    return copy;
   },
   focusOn: (selection) => set({ selection, view: 'schematic', focusToken: get().focusToken + 1 }),
   setView: (view) => set({ view }),

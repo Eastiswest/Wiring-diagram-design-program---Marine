@@ -57,7 +57,6 @@ export const FIELDS: Record<ComponentType, FieldSpec[]> = {
   battery: [
     voltage,
     { key: 'capacityAh', label: 'Capacity per battery', type: 'number', unit: 'Ah' },
-    { key: 'parallelCount', label: 'Batteries in parallel', type: 'number' },
     { key: 'chemistry', label: 'Chemistry', type: 'select', options: [{ value: 'flooded', label: 'Flooded lead-acid' }, { value: 'agm', label: 'AGM' }, { value: 'gel', label: 'Gel' }, { value: 'lifepo4', label: 'LiFePO4 (lithium)' }] },
     { key: 'bankId', label: 'Bank id', type: 'text', hint: 'Batteries with the same bank id are summed as one bank.' },
     { key: 'maxDischargeA', label: 'Max continuous discharge', type: 'number', unit: 'A' },
