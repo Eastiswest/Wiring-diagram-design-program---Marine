@@ -820,8 +820,14 @@ export function analyse(project: Project): Analysis {
         }
       }
     } else {
-      const anyCable = project.cables.some((c) => (c.from.component === bat.id && c.from.port === 'pos') || (c.to.component === bat.id && c.to.port === 'pos'));
-      if (anyCable) {
+      // Only a feeder leaving the terminal needs a fuse; a battery whose positive
+      // carries nothing but bank interconnects is protected through its siblings.
+      const feeder = terminalCables.some((w) => {
+        const farId = w.from.component === bat.id && w.from.port === 'pos' ? w.to.component : w.from.component;
+        const far = byId.get(farId);
+        return !(far && far.type === 'battery' && bankOf(far) === bankOf(bat));
+      });
+      if (feeder) {
         checks.push({
           id: `battery-no-fuse-${bat.id}`,
           severity: 'error',
