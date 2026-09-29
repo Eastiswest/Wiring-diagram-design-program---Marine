@@ -38,6 +38,9 @@ export function App() {
   const markSaved = useProject((s) => s.markSaved);
   const loadProject = useProject((s) => s.loadProject);
   const newFromDemo = useProject((s) => s.newFromDemo);
+  const copySelection = useProject((s) => s.copySelection);
+  const paste = useProject((s) => s.paste);
+  const duplicateSelection = useProject((s) => s.duplicateSelection);
   const analysis = useAnalysis();
   const [showNew, setShowNew] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
@@ -57,12 +60,21 @@ export function App() {
       } else if (mod && e.key.toLowerCase() === 's') {
         e.preventDefault();
         saveJson();
+      } else if (mod && e.key.toLowerCase() === 'c') {
+        const n = copySelection();
+        if (n) setMessage(`Copied ${n} component${n === 1 ? '' : 's'}.`);
+      } else if (mod && e.key.toLowerCase() === 'v') {
+        const n = paste();
+        if (n) e.preventDefault();
+      } else if (mod && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        duplicateSelection();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [undo, redo, project]);
+  }, [undo, redo, project, copySelection, paste, duplicateSelection]);
 
   useEffect(() => {
     if (!message) return;

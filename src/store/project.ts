@@ -24,6 +24,12 @@ interface State {
   /** Incremented whenever the schematic should zoom to the selection. */
   focusToken: number;
   focusOn: (sel: Selection) => void;
+  /** In-memory clipboard of copied components and the cables between them */
+  clipboard?: { components: Component[]; cables: Cable[] };
+  copySelection: () => number;
+  /** Paste the clipboard, offset from the originals; returns the number of components pasted */
+  paste: () => number;
+  duplicateSelection: () => number;
   setView: (view: ViewId) => void;
   select: (sel: Selection) => void;
   /** Replace the project with history recorded. */
@@ -72,6 +78,48 @@ export const useProject = create<State>((set, get) => ({
   selection: { componentIds: [], cableIds: [] },
   dirty: false,
   focusToken: 0,
+  clipboard: undefined,
+  copySelection: () => {
+    const { project, selection } = get();
+    const ids = new Set(selection.componentIds);
+    const components = project.components.filter((c) => ids.has(c.id));
+    if (!components.length) return 0;
+    const cables = project.cables.filter((w) => ids.has(w.from.component) && ids.has(w.to.component));
+    set({ clipboard: clone({ components, cables }) });
+    return components.length;
+  },
+  paste: () => {
+    const { clipboard } = get();
+    if (!clipboard?.components.length) return 0;
+    const idMap = new Map<string, string>();
+    const newComponents: Component[] = [];
+    const newCables: Cable[] = [];
+    get().commit((d) => {
+      for (const c of clipboard.components) {
+        const copy = makeComponent({ ...d, components: [...d.components, ...newComponents] }, c.type, c.x + 40, c.y + 40, clone(c.params));
+        idMap.set(c.id, copy.id);
+        newComponents.push(copy);
+      }
+      d.components.push(...newComponents);
+      for (const w of clipboard.cables) {
+        const { tag: _tag, ...params } = clone(w.params);
+        void _tag;
+        const cable = makeCable({ ...d, cables: [...d.cables, ...newCables] }, { component: idMap.get(w.from.component)!, port: w.from.port }, { component: idMap.get(w.to.component)!, port: w.to.port }, params);
+        newCables.push(cable);
+      }
+      d.cables.push(...newCables);
+    });
+    // Pasting again should land further along, not on top of the last paste.
+    set({
+      clipboard: { components: clipboard.components.map((c) => ({ ...c, x: c.x + 40, y: c.y + 40 })), cables: clipboard.cables },
+      selection: { componentIds: newComponents.map((c) => c.id), cableIds: newCables.map((w) => w.id) },
+    });
+    return newComponents.length;
+  },
+  duplicateSelection: () => {
+    if (!get().copySelection()) return 0;
+    return get().paste();
+  },
   focusOn: (selection) => set({ selection, view: 'schematic', focusToken: get().focusToken + 1 }),
   setView: (view) => set({ view }),
   select: (selection) => set({ selection }),

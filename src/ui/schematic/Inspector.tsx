@@ -273,7 +273,7 @@ export function Inspector({ analysis }: Props) {
     <aside className="inspector">
       <div className="inspector-body">
         <h3>{total > 1 ? `${total} items selected` : 'Nothing selected'}</h3>
-        <p className="muted">{total > 1 ? 'Press Delete to remove them. Select a single item to edit it.' : 'Select a component or cable to edit its parameters and see its sizing and findings.'}</p>
+        <p className="muted">{total > 1 ? 'Press Delete to remove them, Ctrl+C / Ctrl+V to copy and paste them, or Ctrl+D to duplicate. Select a single item to edit it.' : 'Select a component or cable to edit its parameters and see its sizing and findings. Ctrl+C / Ctrl+V copies and pastes selected components, Ctrl+D duplicates.'}</p>
         <section className="result-block">
           <h4>Design summary</h4>
           <dl>
