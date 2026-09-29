@@ -5,6 +5,7 @@ import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  SelectionMode,
   useEdgesState,
   useNodesState,
   useReactFlow,
@@ -189,6 +190,13 @@ function Canvas({ analysis, showLabels }: { analysis: Analysis; showLabels: bool
           onNodesDelete={(deleted) => removeComponents(deleted.map((n) => n.id))}
           onEdgesDelete={(deleted) => removeCables(deleted.map((e) => e.id))}
           deleteKeyCode={['Delete', 'Backspace']}
+          selectionOnDrag
+          selectionMode={SelectionMode.Partial}
+          panOnDrag={[1, 2]}
+          panOnScroll
+          zoomOnScroll={false}
+          zoomOnPinch
+          multiSelectionKeyCode={['Shift', 'Control', 'Meta']}
           snapToGrid
           snapGrid={[10, 10]}
           fitView

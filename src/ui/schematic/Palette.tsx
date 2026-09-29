@@ -35,7 +35,7 @@ export function Palette({ onAdd }: Props) {
           );
         })}
       </div>
-      <p className="palette-hint">Click to add at the centre, or drag onto the canvas. Drag between terminals to run a cable.</p>
+      <p className="palette-hint">Click to add at the centre, or drag onto the canvas. Drag between terminals to run a cable. Drag on empty canvas to box-select, Shift-click to add to a selection. Pan with the scroll wheel, middle or right mouse button, or Space + drag. Ctrl + scroll zooms.</p>
     </aside>
   );
 }
