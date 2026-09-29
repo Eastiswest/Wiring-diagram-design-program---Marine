@@ -49,6 +49,10 @@ export function schematicSvg(project: Project, analysis: Analysis): string {
     if (!pa || !pb) continue;
     const r = results.get(w.id);
     const colour = CONDUCTOR_COLOURS[r?.kind ?? 'any']?.hex ?? '#888';
+    if (r?.stud) {
+      parts.push(`<line x1="${a.x + pa.x}" y1="${a.y + pa.y}" x2="${b.x + pb.x}" y2="${b.y + pb.y}" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>`);
+      continue;
+    }
     const [d, lx, ly] = getSmoothStepPath({
       sourceX: a.x + pa.x,
       sourceY: a.y + pa.y,

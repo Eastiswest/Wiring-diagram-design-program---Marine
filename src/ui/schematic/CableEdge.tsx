@@ -18,9 +18,19 @@ export function cableLabel(cable: Cable, result?: CableResult): string {
 
 function CableEdgeInner(props: EdgeProps<CableEdgeType>) {
   const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected, markerEnd } = props;
-  const [path, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 6 });
   const kind = data?.result?.kind ?? 'any';
   const colour = CONDUCTOR_COLOURS[kind]?.hex ?? '#888';
+  if (data?.result?.stud) {
+    // Stud link: straight, heavy, unlabelled. Invisible when the fuse sits on the terminal.
+    const path = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+    return (
+      <>
+        {selected ? <BaseEdge path={path} style={{ stroke: '#2563eb', strokeWidth: 10, opacity: 0.35 }} /> : null}
+        <BaseEdge path={path} style={{ stroke: '#6b7280', strokeWidth: 6, strokeLinecap: 'round' }} interactionWidth={16} />
+      </>
+    );
+  }
+  const [path, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 6 });
   const width = strokeForCsa(data?.result?.csa);
   return (
     <>

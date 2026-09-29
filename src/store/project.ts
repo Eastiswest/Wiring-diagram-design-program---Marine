@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { demoProject } from '../model/demo';
 import { portDef } from '../model/catalogue';
-import { nodeSize } from '../ui/schematic/layout';
+import { attachedTerminalFuses, nodeSize, studPosition } from '../ui/schematic/layout';
 import { makeCable, makeComponent, validateProject } from '../model/project';
 import type { Cable, CableParams, Component, ComponentParams, ComponentType, Project, RulebookSettings, VesselInfo } from '../model/types';
 
@@ -129,8 +129,8 @@ export const useProject = create<State>((set, get) => ({
     const { project } = get();
     const bat = project.components.find((c) => c.id === id);
     if (!bat || bat.type !== 'battery') return undefined;
-    const { width } = nodeSize(bat);
-    const fuse = makeComponent(project, 'terminal-fuse', bat.x + width + 30, bat.y - 30, {});
+    const fuse = makeComponent(project, 'terminal-fuse', 0, 0, {});
+    Object.assign(fuse, studPosition(bat, fuse));
     const cable = makeCable({ ...project, components: [...project.components, fuse] }, { component: bat.id, port: 'pos' }, { component: fuse.id, port: 'in' }, { lengthM: 0, colour: 'red', notes: 'Stud mounted' });
     get().commit((d) => {
       d.components.push(fuse);
@@ -176,11 +176,21 @@ export const useProject = create<State>((set, get) => ({
   moveComponents: (positions) => {
     const { project, past } = get();
     const draft = clone(project);
+    const moved = new Set(positions.map((p) => p.id));
     for (const p of positions) {
       const c = draft.components.find((x) => x.id === p.id);
-      if (c) {
-        c.x = p.x;
-        c.y = p.y;
+      if (!c) continue;
+      const dx = p.x - c.x;
+      const dy = p.y - c.y;
+      c.x = p.x;
+      c.y = p.y;
+      // A fuse bolted to the battery terminal moves with the battery.
+      if (c.type === 'battery') {
+        for (const f of attachedTerminalFuses(draft, c.id)) {
+          if (moved.has(f.id)) continue;
+          f.x += dx;
+          f.y += dy;
+        }
       }
     }
     set({ project: draft, past: [...past.slice(-HISTORY_LIMIT), project], future: [], dirty: true });

@@ -214,7 +214,8 @@ function CableInspector({ cable, result, analysis }: { cable: Cable; result?: Ca
   const to = analysis.network.components.get(cable.to.component);
   return (
     <div className="inspector-body">
-      <h3>Cable {p.tag}</h3>
+      <h3>{result?.stud ? `Stud link ${p.tag}` : `Cable ${p.tag}`}</h3>
+      {result?.stud ? <p className="muted">Direct stud connection between the battery terminal and the terminal fuse. No cable to size. Drag the battery and the fuse moves with it.</p> : null}
       <p className="muted">{from?.ref} {from?.params.name} [{cable.from.port}] → {to?.ref} {to?.params.name} [{cable.to.port}]</p>
       <div className="field-row">
         <label className="field"><span className="field-label">Tag</span><input value={p.tag} onChange={(e) => set({ tag: e.target.value })} /></label>

@@ -1,5 +1,5 @@
 import { CATALOGUE, portsOf } from '../../model/catalogue';
-import type { Component, PortDef, Side } from '../../model/types';
+import type { Component, PortDef, Project, Side } from '../../model/types';
 
 export interface NodeSize {
   width: number;
@@ -68,4 +68,25 @@ export function strokeForCsa(csa?: number): number {
   if (csa <= 25) return 3;
   if (csa <= 70) return 4;
   return 5;
+}
+
+/** Position for a terminal fuse so that its stud port sits exactly on the battery's positive terminal. */
+export function studPosition(battery: Component, fuse: Component): { x: number; y: number } {
+  const bPos = portPositions(battery).find((p) => p.id === 'pos');
+  const fStud = portPositions(fuse).find((p) => p.id === 'in');
+  if (!bPos || !fStud) return { x: battery.x, y: battery.y };
+  return { x: Math.round(battery.x + bPos.x - fStud.x), y: Math.round(battery.y + bPos.y - fStud.y) };
+}
+
+/** Terminal fuses bolted to a battery: connected to its positive by a zero-length stud link. */
+export function attachedTerminalFuses(project: Project, batteryId: string): Component[] {
+  const ids = new Set<string>();
+  for (const w of project.cables) {
+    if (w.params.lengthM > 0) continue;
+    const ends = [w.from, w.to];
+    const bat = ends.find((e) => e.component === batteryId && e.port === 'pos');
+    const fuse = ends.find((e) => e.port === 'in' && project.components.find((c) => c.id === e.component)?.type === 'terminal-fuse');
+    if (bat && fuse) ids.add(fuse.component);
+  }
+  return project.components.filter((c) => ids.has(c.id));
 }
