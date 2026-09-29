@@ -777,6 +777,8 @@ export function analyse(project: Project): Analysis {
     for (const w of terminalCables) {
       const farKey = w.from.component === bat.id && w.from.port === 'pos' ? portKey(w.to.component, w.to.port) : portKey(w.from.component, w.from.port);
       const farComp = byId.get(splitKey(farKey).component);
+      // Interconnects between batteries of the same bank are part of the bank, not a feeder.
+      if (farComp && farComp.type === 'battery' && bankOf(farComp) === bankOf(bat)) continue;
       const isProt = (comp: Component) => ['fuse', 'breaker'].includes(comp.type);
       let hops: Hop[] = [{ from: posKey, to: farKey, cableId: w.id }];
       let device: Component | undefined = farComp && isProt(farComp) ? farComp : undefined;
