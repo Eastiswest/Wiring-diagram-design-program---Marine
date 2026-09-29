@@ -33,6 +33,8 @@ interface State {
   duplicateSelection: () => number;
   /** Add another battery of the same spec and bank, wired in parallel with the given one */
   addParallelBattery: (id: string) => Component | undefined;
+  /** Bolt an MRBF fuse onto the battery's positive stud */
+  addTerminalFuse: (id: string) => Component | undefined;
   setView: (view: ViewId) => void;
   select: (sel: Selection) => void;
   /** Replace the project with history recorded. */
@@ -122,6 +124,20 @@ export const useProject = create<State>((set, get) => ({
   duplicateSelection: () => {
     if (!get().copySelection()) return 0;
     return get().paste();
+  },
+  addTerminalFuse: (id) => {
+    const { project } = get();
+    const bat = project.components.find((c) => c.id === id);
+    if (!bat || bat.type !== 'battery') return undefined;
+    const { width } = nodeSize(bat);
+    const fuse = makeComponent(project, 'terminal-fuse', bat.x + width + 30, bat.y - 30, {});
+    const cable = makeCable({ ...project, components: [...project.components, fuse] }, { component: bat.id, port: 'pos' }, { component: fuse.id, port: 'in' }, { lengthM: 0, colour: 'red', notes: 'Stud mounted' });
+    get().commit((d) => {
+      d.components.push(fuse);
+      d.cables.push(cable);
+    });
+    set({ selection: { componentIds: [fuse.id], cableIds: [] } });
+    return fuse;
   },
   addParallelBattery: (id) => {
     const { project } = get();

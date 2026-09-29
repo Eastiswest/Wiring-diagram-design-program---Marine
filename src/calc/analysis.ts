@@ -754,7 +754,8 @@ export function analyse(project: Project): Analysis {
         standard: r.kind.startsWith('ac') ? 'ISO13297' : 'ISO10133',
       });
     }
-    if (r.lengthM <= 0) {
+    const onStud = [cable.from, cable.to].some((end) => byId.get(end.component)?.type === 'terminal-fuse' && end.port === 'in');
+    if (r.lengthM <= 0 && !onStud) {
       checks.push({
         id: `cable-length-${r.cableId}`,
         severity: 'warning',
@@ -803,7 +804,7 @@ export function analyse(project: Project): Analysis {
       const farComp = byId.get(splitKey(farKey).component);
       // Interconnects between batteries of the same bank are part of the bank, not a feeder.
       if (farComp && farComp.type === 'battery' && bankOf(farComp) === bankOf(bat)) continue;
-      const isProt = (comp: Component) => ['fuse', 'breaker'].includes(comp.type);
+      const isProt = (comp: Component) => ['fuse', 'terminal-fuse', 'breaker'].includes(comp.type);
       let hops: Hop[] = [{ from: posKey, to: farKey, cableId: w.id }];
       let device: Component | undefined = farComp && isProt(farComp) ? farComp : undefined;
       if (!device) {
@@ -832,11 +833,12 @@ export function analyse(project: Project): Analysis {
       if (bat.params.chemistry === 'lifepo4') {
         const sc = bat.params.shortCircuitA;
         const aic = dev.params.interruptA ?? 0;
-        if (dev.params.protectionType !== 'Class T' || (sc && aic < sc)) {
+        const highAic = dev.params.protectionType === 'Class T' || dev.params.protectionType === 'MRBF';
+        if (sc ? aic < sc : !highAic) {
           checks.push({
             id: `lithium-fuse-${bat.id}`,
             severity: 'warning',
-            message: `${bat.ref} is lithium. Main protection ${dev.ref} is ${dev.params.protectionType ?? 'unspecified'} with ${aic || 'unknown'} A interrupt rating; a Class T or equivalent high-AIC fuse rated above the bank short-circuit current${sc ? ` (${sc} A)` : ''} is expected.`,
+            message: `${bat.ref} is lithium. Main protection ${dev.ref} is ${dev.params.protectionType ?? 'unspecified'} with ${aic || 'unknown'} A interrupt rating; ${sc ? `the bank short-circuit current is ${sc} A` : 'enter the bank short-circuit current, and use a Class T or MRBF fuse with an interrupt rating above it'}.`,
             componentIds: [bat.id, dev.id],
             cableIds: [],
             standard: 'BMEA',

@@ -219,7 +219,7 @@ export function protectionOnPath(net: Network, hops: Hop[]): ProtectionOnPath[] 
     const comp = net.components.get(a.component);
     if (!comp) continue;
     const t = comp.type;
-    if (t === 'fuse' || t === 'breaker' || t === 'rcd' || t === 'ac-breaker-2p') {
+    if (t === 'fuse' || t === 'terminal-fuse' || t === 'breaker' || t === 'rcd' || t === 'ac-breaker-2p') {
       if (!found.some((f) => f.componentId === comp.id)) {
         found.push({
           componentId: comp.id,

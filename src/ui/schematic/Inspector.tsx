@@ -90,6 +90,7 @@ function ComponentInspector({ component, analysis }: { component: Component; ana
   const updateRef = useProject((s) => s.updateComponentRef);
   const removeComponents = useProject((s) => s.removeComponents);
   const addParallelBattery = useProject((s) => s.addParallelBattery);
+  const addTerminalFuse = useProject((s) => s.addTerminalFuse);
   const commit = useProject((s) => s.commit);
   const def = CATALOGUE[component.type];
   const p = component.params;
@@ -136,6 +137,7 @@ function ComponentInspector({ component, analysis }: { component: Component; ana
           <div className="row-inline">
             <span>{bank ? `${bank.batteryIds.length} in bank ${bank.bankId}` : '1'}</span>
             <button className="small" onClick={() => addParallelBattery(component.id)}>Add battery in parallel</button>
+            <button className="small" onClick={() => addTerminalFuse(component.id)}>Add MRBF terminal fuse</button>
           </div>
           <small>Adds another battery of this spec beside the bank and wires + to + and - to -. Each battery is its own component and can be moved.</small>
           {(p.parallelCount ?? 1) > 1 ? <small>This battery also carries a legacy multiplier of {p.parallelCount}; its capacity is counted {p.parallelCount} times. Set it to 1 after adding real batteries.</small> : null}

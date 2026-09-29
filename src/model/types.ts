@@ -53,6 +53,7 @@ export type ComponentType =
   | 'battery-switch'
   | 'battery-selector'
   | 'fuse'
+  | 'terminal-fuse'
   | 'breaker'
   | 'busbar'
   | 'dc-panel'
@@ -80,7 +81,7 @@ export type ComponentType =
   | 'junction';
 
 export type BatteryChemistry = 'flooded' | 'agm' | 'gel' | 'lifepo4';
-export type ProtectionType = 'ANL' | 'MEGA' | 'MIDI' | 'Class T' | 'blade' | 'glass' | 'MCB' | 'MRCB' | 'thermal';
+export type ProtectionType = 'ANL' | 'MEGA' | 'MIDI' | 'MRBF' | 'Class T' | 'blade' | 'glass' | 'MCB' | 'MRCB' | 'thermal';
 export type LoadCategory =
   | 'navigation'
   | 'bilge'

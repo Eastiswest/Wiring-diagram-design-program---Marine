@@ -25,7 +25,7 @@ const protection: FieldSpec[] = [
     key: 'protectionType',
     label: 'Type',
     type: 'select',
-    options: ['ANL', 'MEGA', 'MIDI', 'Class T', 'blade', 'glass', 'MCB', 'MRCB', 'thermal'].map((v) => ({ value: v, label: v })),
+    options: ['ANL', 'MEGA', 'MIDI', 'MRBF', 'Class T', 'blade', 'glass', 'MCB', 'MRCB', 'thermal'].map((v) => ({ value: v, label: v })),
   },
   { key: 'interruptA', label: 'Interrupt rating', type: 'number', unit: 'A', hint: 'AIC. Lithium banks need a high-AIC fuse such as Class T.' },
 ];
@@ -86,6 +86,7 @@ export const FIELDS: Record<ComponentType, FieldSpec[]> = {
     },
   ],
   fuse: protection,
+  'terminal-fuse': protection,
   breaker: protection,
   busbar: [{ key: 'netKind', label: 'Network', type: 'select', options: netKindOptions }, { key: 'portCount', label: 'Studs', type: 'number' }, ratedA],
   'dc-panel': [voltage],

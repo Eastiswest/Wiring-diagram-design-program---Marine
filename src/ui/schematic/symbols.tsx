@@ -146,6 +146,17 @@ export function Symbol({ component, width, height }: Props): ReactElement {
           <Text x={cx} y={height - 3} size={8}>{p.protectionType ?? ''}</Text>
         </g>
       );
+    case 'terminal-fuse':
+      return (
+        <g>
+          <Box width={width} height={height} />
+          <circle cx={14} cy={cy} r={5} fill="none" stroke={stroke} strokeWidth={1.5} />
+          <rect x={22} y={cy - 5} width={width - 34} height={10} fill="none" stroke={stroke} strokeWidth={1.5} />
+          <line x1={19} y1={cy} x2={width - 6} y2={cy} stroke={stroke} strokeWidth={1.5} />
+          <Text x={cx + 4} y={cy - 8} size={9} weight={600}>{`${component.ref} ${p.rating ?? ''} A`}</Text>
+          <Text x={cx + 4} y={height - 3} size={8}>MRBF</Text>
+        </g>
+      );
     case 'breaker':
       return (
         <g>

@@ -281,3 +281,20 @@ describe('engine starter', () => {
     expect(a.banks[0].peakLoadA).toBe(0);
   });
 });
+
+describe('MRBF terminal fuse', () => {
+  it('protects the battery with no unprotected length and satisfies the lithium AIC check', () => {
+    const p = newProject('t', {}, 'leisure');
+    const bat = makeComponent(p, 'battery', 0, 0, { voltage: 12, capacityAh: 200, chemistry: 'lifepo4', bankId: 'house', shortCircuitA: 6000 });
+    const mrbf = makeComponent(p, 'terminal-fuse', 0, 0, { rating: 150, interruptA: 10000 });
+    const load = makeComponent(p, 'dc-load', 0, 0, { amps: 20, voltage: 12, hoursPerDay: 1 });
+    p.components.push(bat, mrbf, load);
+    const w = (a: typeof bat, ap: string, b: typeof bat, bp: string, len: number) => p.cables.push(makeCable(p, { component: a.id, port: ap }, { component: b.id, port: bp }, { lengthM: len }));
+    w(bat, 'pos', mrbf, 'in', 0);
+    w(mrbf, 'out', load, 'pos', 3);
+    w(load, 'neg', bat, 'neg', 3);
+    const a = analyse(p);
+    expect(a.loads[0].protection[0].protectionType).toBe('MRBF');
+    expect(a.checks.filter((c) => c.severity !== 'info').map((c) => c.message)).toEqual([]);
+  });
+});

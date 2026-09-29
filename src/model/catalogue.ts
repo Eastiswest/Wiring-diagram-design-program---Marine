@@ -217,6 +217,20 @@ export const CATALOGUE: Record<ComponentType, ComponentDef> = {
     ],
     description: 'Fuse. Rating is checked against the cable it protects and the circuit current.',
   },
+  'terminal-fuse': {
+    type: 'terminal-fuse',
+    label: 'MRBF terminal fuse',
+    category: 'dc-distribution',
+    refPrefix: 'F',
+    width: 70,
+    height: 44,
+    defaults: { name: 'MRBF terminal fuse', protectionType: 'MRBF', rating: 150, interruptA: 10000 },
+    ports: () => [
+      { id: 'in', label: 'STUD', kind: 'dc+', side: 'left', group: 'f' },
+      { id: 'out', label: 'OUT', kind: 'any', side: 'right', group: 'f' },
+    ],
+    description: 'Marine Rated Battery Fuse bolted directly onto the battery positive stud. 30 to 300 A, 10 kA interrupt at 14 V (2 kA at 32 V). The STUD side connects to the battery with no cable length.',
+  },
   breaker: {
     type: 'breaker',
     label: 'DC breaker',
@@ -614,7 +628,7 @@ export function isAcLoad(type: ComponentType): boolean {
 }
 
 export function isProtection(type: ComponentType): boolean {
-  return type === 'fuse' || type === 'breaker' || type === 'rcd' || type === 'ac-breaker-2p';
+  return type === 'fuse' || type === 'terminal-fuse' || type === 'breaker' || type === 'rcd' || type === 'ac-breaker-2p';
 }
 
 export function isDcSource(type: ComponentType): boolean {
