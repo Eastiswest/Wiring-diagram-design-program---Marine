@@ -1,5 +1,5 @@
 import { STANDARDS, VESSEL_USES, defaultRulebook } from '../../model/rulebooks';
-import type { BatteryChemistry, StandardId } from '../../model/types';
+import type { BatteryChemistry, InsulationTemp, StandardId } from '../../model/types';
 import { useProject } from '../../store/project';
 
 export function SettingsView() {
@@ -12,7 +12,7 @@ export function SettingsView() {
   const num = (key: keyof typeof rb, label: string, step = 0.1, hint?: string) => (
     <label className="field" key={key}>
       <span className="field-label">{label}</span>
-      <input type="number" step={step} value={rb[key] as number} onChange={(e) => updateRulebook({ [key]: Number(e.target.value) })} />
+      <input type="number" step={step} value={(rb[key] as number | undefined) ?? ''} onChange={(e) => updateRulebook({ [key]: Number(e.target.value) })} />
       {hint ? <small>{hint}</small> : null}
     </label>
   );
@@ -77,6 +77,20 @@ export function SettingsView() {
               <label key={c} className="field"><span className="field-label">{c}</span><input type="number" step={0.05} min={0.1} max={1} value={rb.dodByChemistry[c]} onChange={(e) => updateRulebook({ dodByChemistry: { ...rb.dodByChemistry, [c]: Number(e.target.value) } })} /></label>
             ))}
           </div>
+        </div>
+        <div className="grid2">
+          {(['defaultInsulationDc', 'defaultInsulationAc'] as const).map((key) => (
+            <label className="field" key={key}>
+              <span className="field-label">{key === 'defaultInsulationDc' ? 'Default insulation rating, DC cables' : 'Default insulation rating, AC cables'}</span>
+              <select value={rb[key] ?? (key === 'defaultInsulationDc' ? 105 : 70)} onChange={(e) => updateRulebook({ [key]: Number(e.target.value) as InsulationTemp })}>
+                {[70, 85, 90, 105].map((t) => (
+                  <option key={t} value={t}>{t} °C</option>
+                ))}
+              </select>
+              <small>Applied to new cables. Existing cables keep their own setting, editable per cable.</small>
+            </label>
+          ))}
+          {num('starterVdPct', 'Engine cranking voltage drop limit %', 0.5, 'Cranking circuits are sized on drop, not continuous rating.')}
         </div>
         <label className="field field-check"><span className="field-label">Require galvanic isolator or isolation transformer on shore power</span><input type="checkbox" checked={rb.requireGalvanicIsolation} onChange={(e) => updateRulebook({ requireGalvanicIsolation: e.target.checked })} /></label>
       </section>

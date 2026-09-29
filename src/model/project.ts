@@ -58,7 +58,7 @@ export function defaultCableParams(project: Project, overrides: Partial<CablePar
   return {
     tag: nextCableTag(project),
     lengthM: 1,
-    insulationTemp: 105,
+    insulationTemp: project.rulebook.defaultInsulationDc ?? 105,
     inEngineSpace: false,
     bundleCount: 1,
     ambientC: 30,

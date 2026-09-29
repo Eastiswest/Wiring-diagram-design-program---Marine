@@ -60,6 +60,8 @@ export function defaultRulebook(vesselUse: VesselUse = 'leisure'): RulebookSetti
     requireGalvanicIsolation: true,
     autonomyDays: vesselUse === 'commercial' ? 1 : 2,
     starterVdPct: 5,
+    defaultInsulationDc: 105,
+    defaultInsulationAc: 70,
   };
 }
 

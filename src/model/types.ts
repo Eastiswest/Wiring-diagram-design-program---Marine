@@ -220,6 +220,10 @@ export interface RulebookSettings {
   autonomyDays: number;
   /** Maximum voltage drop for engine cranking circuits, percent (sized on drop, not continuous rating) */
   starterVdPct?: number;
+  /** Insulation temperature rating given to new DC cables */
+  defaultInsulationDc?: InsulationTemp;
+  /** Insulation temperature rating given to new AC cables */
+  defaultInsulationAc?: InsulationTemp;
 }
 
 export interface VesselInfo {

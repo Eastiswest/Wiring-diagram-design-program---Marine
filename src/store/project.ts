@@ -207,7 +207,7 @@ export const useProject = create<State>((set, get) => ({
     const b = project.components.find((c) => c.id === to.component);
     const kinds = [a && portDef(a, from.port)?.kind, b && portDef(b, to.port)?.kind];
     const isAc = kinds.some((k) => k && k.startsWith('ac-'));
-    const cable = makeCable(project, from, to, { ...(isAc ? { insulationTemp: 70 } : {}), ...overrides });
+    const cable = makeCable(project, from, to, { ...(isAc ? { insulationTemp: project.rulebook.defaultInsulationAc ?? 70 } : {}), ...overrides });
     get().commit((d) => {
       d.cables.push(cable);
     });
